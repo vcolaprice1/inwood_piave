@@ -75,3 +75,4 @@ body { font-family: Georgia, "Times New Roman", serif; color: var(--ink); }
   .atlas-mobile-toggle { display: block; }
   .leaflet-top.leaflet-left { left: 0; top: 50px; }
 }
+.atlas-basin, .atlas-context { pointer-events: none !important; }

@@ -65,15 +65,30 @@
     const name = layer.feature.properties.name || layer.feature.properties.Name;
     layer.unbindTooltip();
     const key = String(name || '').trim().toLocaleLowerCase('it');
-    if (key && !labelledRivers.has(key)) {
+    if (key && !/^torrente\b/i.test(String(name).trim()) && !labelledRivers.has(key)) {
       labelledRivers.add(key);
       layer.bindTooltip(esc(name), {permanent:true, direction:'center', className:'river-label', opacity:.88});
     }
   });
-  layer_Bacino_Piave_full_26.setStyle({color:'#6e7c73', weight:1.2, opacity:.75, fillColor:'#d7e4dc', fillOpacity:.08});
+  layer_Bacino_Piave_full_26.setStyle({color:'#53685c', weight:3, opacity:.92, fillColor:'#d7e4dc', fillOpacity:.08});
+  layer_Bacino_Piave_full_26.eachLayer(layer => {
+    layer.options.interactive = false;
+    layer.options.className = `${layer.options.className || ''} atlas-basin`.trim();
+    if (layer.getElement()) layer.getElement().classList.add('atlas-basin');
+    if (layer.bringToBack) layer.bringToBack();
+  });
   layer_Circondari_1871_Piave_25.setStyle({color:'#9b4a2f', weight:1.2, dashArray:'5 5', fillOpacity:0});
   map.removeLayer(layer_Circondari_1871_Piave_25);
-  map.removeLayer(layer_EU_1900_rect_2); map.removeLayer(layer_Austro_Hungarian_Empire_Lands_3);
+  [layer_EU_1900_rect_2, layer_Austro_Hungarian_Empire_Lands_3].forEach(group => {
+    group.eachLayer(layer => {
+      layer.options.interactive = false;
+      layer.options.className = `${layer.options.className || ''} atlas-context`.trim();
+      if (layer.getElement()) layer.getElement().classList.add('atlas-context');
+    });
+  });
+  layer_EU_1900_rect_2.bringToBack();
+  layer_Austro_Hungarian_Empire_Lands_3.bringToBack();
+  layer_Bacino_Piave_full_26.bringToBack();
   [layer_POIs_18, layer_Padola_Ajarnola_20, layer_Pettorina_21, layer_Fiorentina_22, layer_Biois_24]
     .forEach(layer => map.removeLayer(layer));
   historicalLayers.forEach(l => { map.removeLayer(l); l.setOpacity(.62); });
@@ -87,7 +102,7 @@
     `<label class="atlas-layer"><input id="layer-rivers" type="checkbox" checked><span class="atlas-line"></span>Fiumi e torrenti</label>`+
     `<label class="atlas-layer"><input id="layer-basin" type="checkbox" checked><span class="atlas-swatch" style="background:#d7e4dc"></span>Confine del bacino</label>`+
     `<label class="atlas-layer"><input id="layer-districts" type="checkbox"><span class="atlas-swatch" style="background:#9b4a2f"></span>Circondari (1871)</label>`+
-    `<label class="atlas-layer"><input id="layer-context" type="checkbox"><span class="atlas-swatch" style="background:#8b7d61"></span>Contesto storico 1900</label>`+
+    `<label class="atlas-layer"><input id="layer-context" type="checkbox" checked><span class="atlas-swatch" style="background:#8b7d61"></span>Stati d’Europa al 1900</label>`+
     `<label class="atlas-layer"><input id="layer-historical" type="checkbox"><span class="atlas-swatch" style="background:#d0b47d"></span>Carte originali georiferite</label>`+
     `<label class="atlas-layer" for="atlas-opacity">Opacità carte <small id="opacity-value">62%</small></label><input class="atlas-opacity" id="atlas-opacity" type="range" min="20" max="100" value="62">`+
     `<div class="atlas-help"><strong>Come leggere la mappa.</strong> Clicca un punto per consultare denominazione, uso e dati idraulici dell’opificio. I valori non presenti nella fonte del 1891 non vengono mostrati.</div>`;
@@ -110,6 +125,22 @@
   panel.querySelector('#layer-context').addEventListener('change',e=>[layer_EU_1900_rect_2,layer_Austro_Hungarian_Empire_Lands_3].forEach(l=>e.target.checked?map.addLayer(l):map.removeLayer(l)));
   panel.querySelector('#layer-historical').addEventListener('change',e=>historicalLayers.forEach(l=>e.target.checked?map.addLayer(l):map.removeLayer(l)));
   panel.querySelector('#atlas-opacity').addEventListener('input',e=>{ const v=e.target.value/100; historicalLayers.forEach(l=>l.setOpacity(v)); panel.querySelector('#opacity-value').textContent=`${e.target.value}%`; });
+
+  map.on('overlayadd', e => {
+    if (e.layer === layer_Bacino_Piave_full_26) {
+      e.layer.bringToBack();
+      e.layer.eachLayer(layer => {
+        if (layer.getElement()) layer.getElement().classList.add('atlas-basin');
+      });
+    }
+    if (e.layer === layer_EU_1900_rect_2 || e.layer === layer_Austro_Hungarian_Empire_Lands_3) {
+      e.layer.bringToBack();
+      layer_Bacino_Piave_full_26.bringToBack();
+      e.layer.eachLayer(layer => {
+        if (layer.getElement()) layer.getElement().classList.add('atlas-context');
+      });
+    }
+  });
 
   const names=panel.querySelector('#atlas-names');
   [...new Set(markers.map(m=>m.p.Denom).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it')).forEach(n=>{ const o=document.createElement('option'); o.value=n; names.appendChild(o); });
