@@ -87,6 +87,10 @@
   layer_POIs_18.setStyle({radius:3.4, color:'#fffaf0', weight:1.1, fillColor:'#6d3727', fillOpacity:.95});
   layer_POIs_18.eachLayer(layer => {
     const name = layer.feature.properties.Nome;
+    if (name === 'Miniere di Agordo') {
+      layer_POIs_18.removeLayer(layer);
+      return;
+    }
     layer.unbindPopup();
     layer.unbindTooltip();
     layer.options.interactive = false;
@@ -164,5 +168,24 @@
   const go=()=>{ const q=search.value.trim().toLowerCase(); if(!q)return; const m=markers.find(x=>String(x.p.Denom).toLowerCase()===q)||markers.find(x=>String(x.p.Denom).toLowerCase().includes(q)); if(m){map.setView(m.layer.getLatLng(),15);m.layer.openPopup();document.body.classList.remove('atlas-open');} };
   search.addEventListener('change',go); search.addEventListener('keydown',e=>{if(e.key==='Enter')go();});
 
-  map.fitBounds(layer_Bacino_Piave_full_26.getBounds(), {paddingTopLeft:[350,20], paddingBottomRight:[20,20]});
+  const basinBounds = layer_Bacino_Piave_full_26.getBounds();
+  map.fitBounds(basinBounds, {paddingTopLeft:[350,20], paddingBottomRight:[20,20], animate:false});
+  const startingZoom = map.getZoom();
+  map.setMinZoom(startingZoom);
+  map.setMaxBounds(basinBounds.pad(.16));
+  map.options.maxBoundsViscosity = 1;
+
+  const overview = document.createElement('div');
+  overview.id = 'atlas-overview';
+  overview.innerHTML = '<span>Europa</span>';
+  document.body.appendChild(overview);
+  const overviewMap = L.map(overview, {
+    zoomControl:false, attributionControl:false, dragging:false, touchZoom:false,
+    doubleClickZoom:false, scrollWheelZoom:false, boxZoom:false, keyboard:false
+  }).setView([49, 11], 3);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {minZoom:3, maxZoom:3}).addTo(overviewMap);
+  L.circleMarker(basinBounds.getCenter(), {
+    radius:6, color:'#fffaf0', weight:2, fillColor:'#a3422d', fillOpacity:1,
+    interactive:false
+  }).addTo(overviewMap);
 })();
