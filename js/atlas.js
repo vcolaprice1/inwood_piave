@@ -22,10 +22,10 @@
   const fmt = (v, suffix='') => has(v) ? `${Number.isFinite(Number(v)) ? Number(v).toLocaleString('it-IT', {maximumFractionDigits: 2}) : esc(v)}${suffix}` : '';
   const category = use => {
     const u = String(use || '').toLowerCase();
-    if (/molino|mulino/.test(u)) return 'Molino';
+    if (/molin[oi]|mulin[oi]|\bpila(?:\s+orzo)?\b/.test(u)) return 'Molino';
     if (/sega|seghe/.test(u)) return 'Sega';
     if (/maglio/.test(u)) return 'Maglio';
-    if (/fucina|forni|fonderia/.test(u)) return 'Fucina';
+    if (/fucin[ae]|forni|fonderia/.test(u)) return 'Fucina';
     if (/gualchiera/.test(u)) return 'Gualchiera';
     if (/cartiera/.test(u)) return 'Cartiera';
     if (/conceria/.test(u)) return 'Conceria';
@@ -63,6 +63,10 @@
   const labelledRivers = new Set();
   layer_fiumi_Bacino_Piave_23.eachLayer(layer => {
     const name = layer.feature.properties.name || layer.feature.properties.Name;
+    layer.unbindPopup();
+    layer.options.interactive = false;
+    layer.options.className = `${layer.options.className || ''} atlas-river`.trim();
+    if (layer.getElement()) layer.getElement().classList.add('atlas-river');
     layer.unbindTooltip();
     const key = String(name || '').trim().toLocaleLowerCase('it');
     if (key && !/^torrente\b/i.test(String(name).trim()) && !labelledRivers.has(key)) {
@@ -79,6 +83,18 @@
   });
   layer_Circondari_1871_Piave_25.setStyle({color:'#9b4a2f', weight:1.2, dashArray:'5 5', fillOpacity:0});
   map.removeLayer(layer_Circondari_1871_Piave_25);
+
+  layer_POIs_18.setStyle({radius:3.4, color:'#fffaf0', weight:1.1, fillColor:'#6d3727', fillOpacity:.95});
+  layer_POIs_18.eachLayer(layer => {
+    const name = layer.feature.properties.Nome;
+    layer.unbindPopup();
+    layer.unbindTooltip();
+    layer.options.interactive = false;
+    layer.options.className = `${layer.options.className || ''} atlas-poi`.trim();
+    if (layer.getElement()) layer.getElement().classList.add('atlas-poi');
+    if (name) layer.bindTooltip(esc(name), {permanent:true, direction:'top', offset:[0,-4], className:'poi-label', opacity:.94});
+  });
+  layer_POIs_18.bringToFront();
   [layer_EU_1900_rect_2, layer_Austro_Hungarian_Empire_Lands_3].forEach(group => {
     group.eachLayer(layer => {
       layer.options.interactive = false;
@@ -89,7 +105,7 @@
   layer_EU_1900_rect_2.bringToBack();
   layer_Austro_Hungarian_Empire_Lands_3.bringToBack();
   layer_Bacino_Piave_full_26.bringToBack();
-  [layer_POIs_18, layer_Padola_Ajarnola_20, layer_Pettorina_21, layer_Fiorentina_22, layer_Biois_24]
+  [layer_Padola_Ajarnola_20, layer_Pettorina_21, layer_Fiorentina_22, layer_Biois_24]
     .forEach(layer => map.removeLayer(layer));
   historicalLayers.forEach(l => { map.removeLayer(l); l.setOpacity(.62); });
 

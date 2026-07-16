@@ -75,4 +75,9 @@ body { font-family: Georgia, "Times New Roman", serif; color: var(--ink); }
   .atlas-mobile-toggle { display: block; }
   .leaflet-top.leaflet-left { left: 0; top: 50px; }
 }
-.atlas-basin, .atlas-context { pointer-events: none !important; }
+.atlas-basin, .atlas-context, .atlas-river, .atlas-poi { pointer-events: none !important; }
+.poi-label {
+  background:rgba(255,250,240,.88); border:0; box-shadow:none; color:#4d2d23;
+  font:700 11px/1.1 Georgia,serif; letter-spacing:.02em; padding:2px 4px;
+}
+.poi-label::before { display:none; }
