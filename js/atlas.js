@@ -3,9 +3,10 @@
 
   const colors = {
     Molino: '#2563a6', Sega: '#2f8f55', Maglio: '#c05a2b', Fucina: '#b83232',
-    Gualchiera: '#7851a9', Cartiera: '#16807a', Conceria: '#9a6a20', Altro: '#65736d'
+    Gualchiera: '#7851a9', Cartiera: '#16807a', Conceria: '#9a6a20',
+    Lanificio: '#8f5273', Altro: '#65736d'
   };
-  const categories = ['Molino','Sega','Maglio','Fucina','Gualchiera','Cartiera','Conceria','Altro'];
+  const categories = ['Molino','Sega','Maglio','Fucina','Gualchiera','Cartiera','Conceria','Lanificio','Altro'];
   const historicalLayers = [
     layer_IMG_20260521_091509983_modificato_4, layer_IMG_20260521_091451300_modificato_5,
     layer_IMG_20260521_091432367_modificato_6, layer_CarteidrografichefiumePiave102_modificato1_7,
@@ -29,6 +30,7 @@
     if (/gualchiera/.test(u)) return 'Gualchiera';
     if (/cartiera/.test(u)) return 'Cartiera';
     if (/conceria/.test(u)) return 'Conceria';
+    if (/lanificio/.test(u)) return 'Lanificio';
     return 'Altro';
   };
 
@@ -165,6 +167,7 @@
 
   const typeBox = panel.querySelector('#atlas-types');
   categories.forEach(c => {
+    if (!counts[c]) return;
     const row=document.createElement('label'); row.className='atlas-legend-row';
     row.innerHTML=`<input type="checkbox" checked data-category="${c}"><span class="atlas-swatch" style="background:${colors[c]}"></span>${c}<small>${counts[c]}</small>`;
     typeBox.appendChild(row);
