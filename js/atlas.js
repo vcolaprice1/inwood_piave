@@ -82,6 +82,12 @@
     if (layer.bringToBack) layer.bringToBack();
   });
   layer_Circondari_1871_Piave_25.setStyle({color:'#9b4a2f', weight:1.2, dashArray:'5 5', fillOpacity:0});
+  layer_Circondari_1871_Piave_25.eachLayer(layer => {
+    layer.unbindPopup();
+    layer.options.interactive = false;
+    layer.options.className = `${layer.options.className || ''} atlas-district`.trim();
+    if (layer.getElement()) layer.getElement().classList.add('atlas-district');
+  });
   map.removeLayer(layer_Circondari_1871_Piave_25);
 
   layer_POIs_18.setStyle({radius:3.4, color:'#fffaf0', weight:1.1, fillColor:'#6d3727', fillOpacity:.95});
@@ -160,6 +166,12 @@
         if (layer.getElement()) layer.getElement().classList.add('atlas-context');
       });
     }
+    if (e.layer === layer_Circondari_1871_Piave_25) {
+      e.layer.eachLayer(layer => {
+        layer.unbindPopup();
+        if (layer.getElement()) layer.getElement().classList.add('atlas-district');
+      });
+    }
   });
 
   const names=panel.querySelector('#atlas-names');
@@ -191,7 +203,7 @@
     interactive:false,
     style:{color:'#6d4e3d', weight:1, fillColor:'#c9b8a0', fillOpacity:1}
   }).addTo(overviewMap);
-  overviewMap.fitBounds(overviewEurope.getBounds(), {padding:[3,3], animate:false});
+  overviewMap.setView([50, 12], 3, {animate:false});
   L.circleMarker(basinBounds.getCenter(), {
     radius:6, color:'#fffaf0', weight:2, fillColor:'#a3422d', fillOpacity:1,
     interactive:false
