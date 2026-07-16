@@ -183,7 +183,15 @@
     zoomControl:false, attributionControl:false, dragging:false, touchZoom:false,
     doubleClickZoom:false, scrollWheelZoom:false, boxZoom:false, keyboard:false
   }).setView([49, 11], 3);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {minZoom:3, maxZoom:3}).addTo(overviewMap);
+  const overviewEurope = L.geoJSON(json_EU_1900_rect_2, {
+    interactive:false,
+    style:{color:'#57524a', weight:.7, fillColor:'#eee9dd', fillOpacity:1}
+  }).addTo(overviewMap);
+  L.geoJSON(json_Austro_Hungarian_Empire_Lands_3, {
+    interactive:false,
+    style:{color:'#6d4e3d', weight:1, fillColor:'#c9b8a0', fillOpacity:1}
+  }).addTo(overviewMap);
+  overviewMap.fitBounds(overviewEurope.getBounds(), {padding:[3,3], animate:false});
   L.circleMarker(basinBounds.getCenter(), {
     radius:6, color:'#fffaf0', weight:2, fillColor:'#a3422d', fillOpacity:1,
     interactive:false

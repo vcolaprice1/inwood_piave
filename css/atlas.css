@@ -84,7 +84,7 @@ body { font-family: Georgia, "Times New Roman", serif; color: var(--ink); }
 #atlas-overview {
   position:fixed; right:18px; bottom:28px; z-index:700; width:190px; height:132px;
   border:4px solid rgba(255,250,240,.96); box-shadow:0 3px 16px rgba(31,43,39,.32);
-  background:#e8eee7;
+  background:#b9d5de;
 }
 #atlas-overview > span {
   position:absolute; z-index:1000; left:7px; top:6px; padding:3px 7px;
