@@ -32,6 +32,27 @@
     return 'Altro';
   };
 
+  function pointInRing(point, ring) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+      if (((yi > point[1]) !== (yj > point[1])) &&
+          (point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
+  }
+  function pointInPolygon(point, polygon) {
+    return pointInRing(point, polygon[0]) && !polygon.slice(1).some(ring => pointInRing(point, ring));
+  }
+  function pointInGeometry(point, geometry) {
+    if (!geometry) return false;
+    if (geometry.type === 'Polygon') return pointInPolygon(point, geometry.coordinates);
+    if (geometry.type === 'MultiPolygon') return geometry.coordinates.some(polygon => pointInPolygon(point, polygon));
+    return false;
+  }
+  const basinGeometries = json_Bacino_Piave_full_26.features.map(feature => feature.geometry);
+  const insideBasin = point => basinGeometries.some(geometry => pointInGeometry(point, geometry));
+
   function field(label, value, suffix='') {
     if (!has(value)) return '';
     return `<div class="atlas-field"><dt>${label}</dt><dd>${fmt(value, suffix)}</dd></div>`;
@@ -52,12 +73,19 @@
 
   const counts = Object.fromEntries(categories.map(c => [c, 0]));
   const markers = [];
+  const outsideBasin = [];
   layer_Opifici_completo_19.eachLayer(layer => {
+    const coordinates = layer.feature.geometry.coordinates;
+    if (!insideBasin(coordinates)) {
+      outsideBasin.push(layer);
+      return;
+    }
     const p = layer.feature.properties; const c = category(p.Uso); counts[c]++; markers.push({layer, category:c, p});
     layer.setStyle({radius: 5.3, color: '#fffdf6', weight: 1.2, fillColor: colors[c], fillOpacity: .92});
     layer.unbindPopup(); layer.bindPopup(popup(p), {maxWidth: 360, className: 'atlas-popup'});
     layer.bindTooltip(esc(p.Denom || ''), {direction:'top', opacity:.9, sticky:true});
   });
+  outsideBasin.forEach(layer => layer_Opifici_completo_19.removeLayer(layer));
 
   layer_fiumi_Bacino_Piave_23.setStyle({color:'#2d83b7', weight:1.8, opacity:.82});
   const labelledRivers = new Set();
