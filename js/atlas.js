@@ -75,17 +75,20 @@
 
   const counts = Object.fromEntries(categories.map(c => [c, 0]));
   const markers = [];
+  const allRecords = [];
   const outsideBasin = [];
   layer_Opifici_completo_19.eachLayer(layer => {
     const coordinates = layer.feature.geometry.coordinates;
+    const p = layer.feature.properties; const c = category(p.Uso); const record = {layer, category:c, p};
+    allRecords.push(record);
+    layer.setStyle({radius: 5.3, color: '#fffdf6', weight: 1.2, fillColor: colors[c], fillOpacity: .92});
+    layer.unbindPopup(); layer.bindPopup(popup(p), {maxWidth: 360, className: 'atlas-popup'});
+    layer.bindTooltip(esc(p.Denom || ''), {direction:'top', opacity:.9, sticky:true});
     if (!insideBasin(coordinates)) {
       outsideBasin.push(layer);
       return;
     }
-    const p = layer.feature.properties; const c = category(p.Uso); counts[c]++; markers.push({layer, category:c, p});
-    layer.setStyle({radius: 5.3, color: '#fffdf6', weight: 1.2, fillColor: colors[c], fillOpacity: .92});
-    layer.unbindPopup(); layer.bindPopup(popup(p), {maxWidth: 360, className: 'atlas-popup'});
-    layer.bindTooltip(esc(p.Denom || ''), {direction:'top', opacity:.9, sticky:true});
+    counts[c]++; markers.push(record);
   });
   outsideBasin.forEach(layer => layer_Opifici_completo_19.removeLayer(layer));
 
@@ -161,7 +164,8 @@
     `<label class="atlas-layer"><input id="layer-context" type="checkbox" checked><span class="atlas-swatch" style="background:#8b7d61"></span>Stati d’Europa al 1900</label>`+
     `<label class="atlas-layer"><input id="layer-historical" type="checkbox"><span class="atlas-swatch" style="background:#d0b47d"></span>Carte originali georiferite</label>`+
     `<label class="atlas-layer" for="atlas-opacity">Opacità carte <small id="opacity-value">62%</small></label><input class="atlas-opacity" id="atlas-opacity" type="range" min="20" max="100" value="62">`+
-    `<div class="atlas-help"><strong>Come leggere la mappa.</strong> Clicca un punto per consultare denominazione, uso e dati idraulici dell’opificio. I valori non presenti nella fonte del 1891 non vengono mostrati.</div>`;
+    `<div class="atlas-help"><strong>Come leggere la mappa.</strong> Clicca un punto per consultare denominazione, uso e dati idraulici dell’opificio. I valori non presenti nella fonte del 1891 non vengono mostrati.</div>`+
+    `<button id="atlas-data-open" class="atlas-data-button" type="button">Esplora il dataset (${allRecords.length})</button>`;
   document.body.appendChild(panel);
   const mobile = document.createElement('button'); mobile.className='atlas-mobile-toggle'; mobile.textContent='☰ Atlante'; mobile.onclick=()=>document.body.classList.toggle('atlas-open'); document.body.appendChild(mobile);
 
@@ -211,6 +215,53 @@
   const go=()=>{ const q=search.value.trim().toLowerCase(); if(!q)return; const m=markers.find(x=>String(x.p.Denom).toLowerCase()===q)||markers.find(x=>String(x.p.Denom).toLowerCase().includes(q)); if(m){map.setView(m.layer.getLatLng(),15);m.layer.openPopup();document.body.classList.remove('atlas-open');} };
   search.addEventListener('change',go); search.addEventListener('keydown',e=>{if(e.key==='Enter')go();});
 
+  const dataFields = [
+    ['Denom','Denominazione'], ['Uso','Uso'], ['NOrd','N. ordine'], ['Canale','Canale'],
+    ['CanLung','Lunghezza canale'], ['Disliv','Dislivello'], ['CorsoAcq','Corso d’acqua'],
+    ['CorLung','Lunghezza corso'], ['Derivaz','Derivazione'], ['Caduta','Caduta'],
+    ['PortMax','Portata max'], ['PortMin','Portata min'], ['PortOrd','Portata ordinaria'],
+    ['DurMax','Durata max'], ['DurMin','Durata min'], ['DurOrd','Durata ordinaria'],
+    ['NumOpif','N. opifici'], ['Osserv','Osservazioni'], ['PdfPage','Pagina fonte']
+  ];
+  const dataPanel = document.createElement('section');
+  dataPanel.className = 'atlas-data-panel';
+  dataPanel.setAttribute('aria-hidden','true');
+  dataPanel.innerHTML = `<div class="atlas-data-head"><h2>Dataset degli opifici</h2>`+
+    `<input id="atlas-data-search" class="atlas-data-search" type="search" placeholder="Cerca in tutti i campi&hellip;" aria-label="Cerca nella tabella">`+
+    `<span id="atlas-data-count" class="atlas-data-count"></span><button class="atlas-data-close" type="button" aria-label="Chiudi">&times;</button></div>`+
+    `<div class="atlas-table-wrap"><table class="atlas-data-table"><thead><tr>${dataFields.map(f=>`<th>${f[1]}</th>`).join('')}</tr></thead><tbody></tbody></table></div>`;
+  document.body.appendChild(dataPanel);
+  const dataBody = dataPanel.querySelector('tbody');
+  const dataSearch = dataPanel.querySelector('#atlas-data-search');
+  const dataCount = dataPanel.querySelector('#atlas-data-count');
+  let visibleRows = allRecords;
+  function renderDataRows() {
+    dataBody.innerHTML = visibleRows.map((m,index)=>`<tr data-index="${index}">${dataFields.map(([key])=>`<td title="${esc(m.p[key])}">${esc(m.p[key] ?? '')}</td>`).join('')}</tr>`).join('');
+    dataCount.textContent = `${visibleRows.length} di ${allRecords.length}`;
+  }
+  function filterData() {
+    const query = dataSearch.value.trim().toLocaleLowerCase('it');
+    visibleRows = query ? allRecords.filter(m=>dataFields.some(([key])=>String(m.p[key] ?? '').toLocaleLowerCase('it').includes(query))) : allRecords;
+    renderDataRows();
+  }
+  renderDataRows();
+  dataSearch.addEventListener('input',filterData);
+  dataBody.addEventListener('click',event=>{
+    const row=event.target.closest('tr'); if(!row)return;
+    const marker=visibleRows[Number(row.dataset.index)];
+    if (!layer_Opifici_completo_19.hasLayer(marker.layer)) layer_Opifici_completo_19.addLayer(marker.layer);
+    if (!map.hasLayer(layer_Opifici_completo_19)) map.addLayer(layer_Opifici_completo_19);
+    map.setView(marker.layer.getLatLng(),15); marker.layer.openPopup();
+    dataPanel.classList.remove('is-open'); dataPanel.setAttribute('aria-hidden','true');
+  });
+  panel.querySelector('#atlas-data-open').addEventListener('click',()=>{
+    dataPanel.classList.add('is-open'); dataPanel.setAttribute('aria-hidden','false');
+    setTimeout(()=>dataSearch.focus(),260);
+  });
+  dataPanel.querySelector('.atlas-data-close').addEventListener('click',()=>{
+    dataPanel.classList.remove('is-open'); dataPanel.setAttribute('aria-hidden','true');
+  });
+
   const basinBounds = layer_Bacino_Piave_full_26.getBounds();
   map.fitBounds(basinBounds, {paddingTopLeft:[350,20], paddingBottomRight:[20,20], animate:false});
   const startingZoom = map.getZoom();
@@ -239,4 +290,10 @@
     radius:6, color:'#fffaf0', weight:2, fillColor:'#a3422d', fillOpacity:1,
     interactive:false
   }).addTo(overviewMap);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.body.classList.remove('atlas-loading');
+    const loading = document.getElementById('atlas-loading-screen');
+    if (loading) loading.remove();
+    map.invalidateSize(false);
+  }));
 })();
