@@ -50,9 +50,14 @@ body { font-family: Georgia, "Times New Roman", serif; color: var(--ink); }
 .atlas-swatch { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
 .atlas-line { width: 20px; height: 0; border-top: 3px solid var(--river); }
 .atlas-opacity { width: 100%; accent-color: var(--accent); }
-.atlas-help { margin-top: 18px; padding: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.48); color: #5e6863; font-size: 12px; line-height: 1.45; }
+.atlas-help { margin: 0 0 16px; padding: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.48); color: #5e6863; font-size: 12px; line-height: 1.45; }
 .atlas-data-button { width:100%; margin-top:12px; padding:10px 12px; border:1px solid #9b4a2f; border-radius:4px; background:#fffaf0; color:#71351f; cursor:pointer; font:700 12px system-ui,sans-serif; }
 .atlas-data-button:hover { background:#f3e6d8; }
+.atlas-data-fab { position:fixed; right:18px; top:18px; z-index:1350; padding:11px 15px; border:1px solid rgba(93,43,27,.35); border-radius:999px; background:rgba(255,250,240,.96); color:#71351f; box-shadow:0 5px 20px rgba(31,39,35,.22); cursor:pointer; font:700 12px system-ui,sans-serif; }
+.atlas-data-fab:hover { background:#f3e6d8; transform:translateY(-1px); }
+.atlas-austro-key { display:flex; align-items:center; gap:9px; padding:2px 0 5px 24px; color:#7d4a40; font:11px/1.25 system-ui,sans-serif; }
+.historical-province { border-top-color:#8b4a36; border-top-style:dashed; }
+.historical-district { border-top-color:#b2763b; border-top-style:dashed; }
 .atlas-data-panel { position:fixed; left:336px; right:0; bottom:0; z-index:1500; height:min(62vh,520px); display:flex; flex-direction:column; background:#fffdf8; border-top:3px solid var(--accent); box-shadow:0 -12px 35px rgba(31,39,35,.24); transform:translateY(105%); transition:transform .24s ease; }
 .atlas-data-panel.is-open { transform:translateY(0); }
 .atlas-data-head { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--line); background:#f6f1e5; }
@@ -106,6 +111,14 @@ body { font-family: Georgia, "Times New Roman", serif; color: var(--ink); }
   font:700 11px/1.1 Georgia,serif; letter-spacing:.02em; padding:2px 4px;
 }
 .poi-label::before { display:none; }
+.localita-label, .comune-label, .historical-boundary-label, .lake-label { border:0 !important; box-shadow:none !important; font-family:Georgia,serif !important; }
+.localita-label { background:rgba(255,250,240,.9) !important; color:#4d2d23 !important; font-weight:700 !important; font-size:11px !important; padding:2px 4px !important; }
+.localita-label::before, .comune-label::before { display:none !important; }
+.comune-label { background:rgba(246,241,229,.72) !important; color:#58665f !important; font-size:9px !important; padding:1px 3px !important; }
+.comune-label.austro { background:rgba(255,235,229,.9) !important; color:#8d2f2f !important; font-weight:700 !important; }
+.hide-commune-labels .comune-label { display:none !important; }
+.historical-boundary-label { background:#fffaf0 !important; color:#71351f !important; font-weight:700 !important; }
+.lake-label { background:rgba(235,248,255,.92) !important; color:#176b9b !important; font-weight:700 !important; }
 #atlas-overview {
   position:fixed; right:18px; bottom:28px; z-index:700; width:190px; height:132px;
   border:4px solid rgba(255,250,240,.96); box-shadow:0 3px 16px rgba(31,43,39,.32);
@@ -119,4 +132,5 @@ body { font-family: Georgia, "Times New Roman", serif; color: var(--ink); }
 #atlas-overview .leaflet-control-container { display:none; }
 @media (max-width:700px) {
   #atlas-overview { width:132px; height:92px; right:10px; bottom:22px; }
+  .atlas-data-fab { right:10px; top:10px; }
 }

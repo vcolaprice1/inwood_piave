@@ -34,6 +34,32 @@
     return 'Altro';
   };
 
+  const layerProvince1881 = L.geoJSON(json_Province_Veneto_1881, {
+    style:{color:'#8b4a36',weight:2,fillOpacity:0,dashArray:'8 5'},
+    onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.DEN_PROV),{sticky:true,className:'historical-boundary-label'})
+  });
+  const layerCircondari1881 = L.geoJSON(json_Circondari_Bacino_1881, {
+    style:{color:'#b2763b',weight:1.5,fillOpacity:0,dashArray:'5 4'},
+    onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.DEN_CIRC),{sticky:true,className:'historical-boundary-label'})
+  });
+  const layerComuni1881 = L.geoJSON(json_Comuni_Belluno_1881, {
+    style:f=>f.properties.AUSTRO_UNGARICO
+      ? {color:'#8d2f2f',weight:1.5,fillColor:'#c65c52',fillOpacity:.24,dashArray:'4 3'}
+      : {color:'#65776d',weight:.8,fillColor:'#dce7df',fillOpacity:.08},
+    onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.ETICHETTA_1891),{permanent:true,direction:'center',className:f.properties.AUSTRO_UNGARICO?'comune-label austro':'comune-label'})
+  });
+  const layerLaghi = L.geoJSON(json_Laghi_Piave, {
+    style:{color:'#176b9b',weight:1.2,fillColor:'#55a9d6',fillOpacity:.72},
+    onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.nome || 'Lago'),{sticky:true,className:'lake-label'})
+  }).addTo(map);
+  const layerLocalita = L.geoJSON(json_Localita_rilevanti, {
+    pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:4.2,color:'#fffaf0',weight:1.3,fillColor:'#5a2f24',fillOpacity:.96}),
+    onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.Nome),{permanent:true,direction:'top',offset:[0,-5],className:'localita-label'})
+  }).addTo(map);
+  const updateCommuneLabels = () => map.getContainer().classList.toggle('hide-commune-labels', map.getZoom() < 11);
+  map.on('zoomend', updateCommuneLabels);
+  updateCommuneLabels();
+
   function pointInRing(point, ring) {
     let inside = false;
     for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -93,16 +119,17 @@
   outsideBasin.forEach(layer => layer_Opifici_completo_19.removeLayer(layer));
 
   layer_fiumi_Bacino_Piave_23.setStyle({color:'#2d83b7', weight:1.8, opacity:.82});
+  const majorRivers = /PIAVE|BOITE|CORDEVOLE|ANSIEI|MAÈ|BIOIS|FIOR[EA]NTINA|PADOLA|PETTORINA|MIS|CAORAME|SONNA|CISMON|TEGOSA|LIVINALLONGO/;
   const labelledRivers = new Set();
   layer_fiumi_Bacino_Piave_23.eachLayer(layer => {
-    const name = layer.feature.properties.name || layer.feature.properties.Name;
+    const name = layer.feature.properties.NOME_CI || layer.feature.properties.name || layer.feature.properties.Name;
     layer.unbindPopup();
     layer.options.interactive = false;
     layer.options.className = `${layer.options.className || ''} atlas-river`.trim();
     if (layer.getElement()) layer.getElement().classList.add('atlas-river');
     layer.unbindTooltip();
     const key = String(name || '').trim().toLocaleLowerCase('it');
-    if (key && !/^torrente\b/i.test(String(name).trim()) && !labelledRivers.has(key)) {
+    if (key && majorRivers.test(String(name).toUpperCase()) && !labelledRivers.has(key)) {
       labelledRivers.add(key);
       layer.bindTooltip(esc(name), {permanent:true, direction:'center', className:'river-label', opacity:.88});
     }
@@ -123,21 +150,7 @@
   });
   map.removeLayer(layer_Circondari_1871_Piave_25);
 
-  layer_POIs_18.setStyle({radius:3.4, color:'#fffaf0', weight:1.1, fillColor:'#6d3727', fillOpacity:.95});
-  layer_POIs_18.eachLayer(layer => {
-    const name = layer.feature.properties.Nome;
-    if (name === 'Miniere di Agordo') {
-      layer_POIs_18.removeLayer(layer);
-      return;
-    }
-    layer.unbindPopup();
-    layer.unbindTooltip();
-    layer.options.interactive = false;
-    layer.options.className = `${layer.options.className || ''} atlas-poi`.trim();
-    if (layer.getElement()) layer.getElement().classList.add('atlas-poi');
-    if (name) layer.bindTooltip(esc(name), {permanent:true, direction:'top', offset:[0,-4], className:'poi-label', opacity:.94});
-  });
-  layer_POIs_18.bringToFront();
+  map.removeLayer(layer_POIs_18);
   [layer_EU_1900_rect_2, layer_Austro_Hungarian_Empire_Lands_3].forEach(group => {
     group.eachLayer(layer => {
       layer.options.interactive = false;
@@ -145,8 +158,8 @@
       if (layer.getElement()) layer.getElement().classList.add('atlas-context');
     });
   });
-  layer_EU_1900_rect_2.bringToBack();
-  layer_Austro_Hungarian_Empire_Lands_3.bringToBack();
+  map.removeLayer(layer_EU_1900_rect_2);
+  map.removeLayer(layer_Austro_Hungarian_Empire_Lands_3);
   layer_Bacino_Piave_full_26.bringToBack();
   [layer_Padola_Ajarnola_20, layer_Pettorina_21, layer_Fiorentina_22, layer_Biois_24]
     .forEach(layer => map.removeLayer(layer));
@@ -155,19 +168,23 @@
   const panel = document.createElement('aside'); panel.className = 'atlas-panel';
   panel.innerHTML = `<div class="atlas-kicker">Atlante storico digitale</div><h1>Le acque e gli opifici del Piave</h1>`+
     `<p class="atlas-subtitle">Carta idrografica d’Italia · Provincia di Belluno · 1891</p>`+
+    `<div class="atlas-help"><strong>Come leggere la mappa.</strong> Cerca un opificio o clicca un punto per consultarne denominazione, uso e dati idraulici. Attiva i livelli storici per confrontare province, circondari e comuni del 1881; i territori allora austro-ungarici sono evidenziati in rosso.</div>`+
     `<div class="atlas-search"><input id="atlas-search" list="atlas-names" placeholder="Cerca un opificio…" aria-label="Cerca un opificio"><span>⌕</span><datalist id="atlas-names"></datalist></div>`+
     `<div class="atlas-rule"></div><h2 class="atlas-section-title">Tipi di opificio</h2><div id="atlas-types"></div>`+
     `<div class="atlas-rule"></div><h2 class="atlas-section-title">Livelli della carta</h2>`+
     `<label class="atlas-layer"><input id="layer-rivers" type="checkbox" checked><span class="atlas-line"></span>Fiumi e torrenti</label>`+
+    `<label class="atlas-layer"><input id="layer-lakes" type="checkbox" checked><span class="atlas-swatch" style="background:#55a9d6"></span>Laghi</label>`+
+    `<label class="atlas-layer"><input id="layer-localities" type="checkbox" checked><span class="atlas-swatch" style="background:#5a2f24"></span>Località rilevanti</label>`+
     `<label class="atlas-layer"><input id="layer-basin" type="checkbox" checked><span class="atlas-swatch" style="background:#d7e4dc"></span>Confine del bacino</label>`+
-    `<label class="atlas-layer"><input id="layer-districts" type="checkbox"><span class="atlas-swatch" style="background:#9b4a2f"></span>Circondari (1871)</label>`+
-    `<label class="atlas-layer"><input id="layer-context" type="checkbox" checked><span class="atlas-swatch" style="background:#8b7d61"></span>Stati d’Europa al 1900</label>`+
+    `<label class="atlas-layer"><input id="layer-provinces-1881" type="checkbox"><span class="atlas-line historical-province"></span>Province del Veneto (1881)</label>`+
+    `<label class="atlas-layer"><input id="layer-districts-1881" type="checkbox"><span class="atlas-line historical-district"></span>Circondari attigui (1881)</label>`+
+    `<label class="atlas-layer"><input id="layer-municipalities-1881" type="checkbox"><span class="atlas-swatch" style="background:#dce7df"></span>Comuni bellunesi (1881)</label>`+
+    `<div class="atlas-austro-key"><span class="atlas-swatch" style="background:#c65c52"></span>Territori austro-ungarici</div>`+
     `<label class="atlas-layer"><input id="layer-historical" type="checkbox"><span class="atlas-swatch" style="background:#d0b47d"></span>Carte originali georiferite</label>`+
-    `<label class="atlas-layer" for="atlas-opacity">Opacità carte <small id="opacity-value">62%</small></label><input class="atlas-opacity" id="atlas-opacity" type="range" min="20" max="100" value="62">`+
-    `<div class="atlas-help"><strong>Come leggere la mappa.</strong> Clicca un punto per consultare denominazione, uso e dati idraulici dell’opificio. I valori non presenti nella fonte del 1891 non vengono mostrati.</div>`+
-    `<button id="atlas-data-open" class="atlas-data-button" type="button">Esplora il dataset (${allRecords.length})</button>`;
+    `<label class="atlas-layer" for="atlas-opacity">Opacità carte <small id="opacity-value">62%</small></label><input class="atlas-opacity" id="atlas-opacity" type="range" min="20" max="100" value="62">`;
   document.body.appendChild(panel);
   const mobile = document.createElement('button'); mobile.className='atlas-mobile-toggle'; mobile.textContent='☰ Atlante'; mobile.onclick=()=>document.body.classList.toggle('atlas-open'); document.body.appendChild(mobile);
+  const dataButton = document.createElement('button'); dataButton.id='atlas-data-open'; dataButton.className='atlas-data-fab'; dataButton.type='button'; dataButton.textContent=`Dataset (${allRecords.length})`; document.body.appendChild(dataButton);
 
   const typeBox = panel.querySelector('#atlas-types');
   categories.forEach(c => {
@@ -182,8 +199,13 @@
   });
 
   const toggle=(id,layer)=>panel.querySelector(id).addEventListener('change',e=>e.target.checked?map.addLayer(layer):map.removeLayer(layer));
-  toggle('#layer-rivers',layer_fiumi_Bacino_Piave_23); toggle('#layer-basin',layer_Bacino_Piave_full_26); toggle('#layer-districts',layer_Circondari_1871_Piave_25);
-  panel.querySelector('#layer-context').addEventListener('change',e=>[layer_EU_1900_rect_2,layer_Austro_Hungarian_Empire_Lands_3].forEach(l=>e.target.checked?map.addLayer(l):map.removeLayer(l)));
+  toggle('#layer-rivers',layer_fiumi_Bacino_Piave_23);
+  toggle('#layer-lakes',layerLaghi);
+  toggle('#layer-localities',layerLocalita);
+  toggle('#layer-basin',layer_Bacino_Piave_full_26);
+  toggle('#layer-provinces-1881',layerProvince1881);
+  toggle('#layer-districts-1881',layerCircondari1881);
+  toggle('#layer-municipalities-1881',layerComuni1881);
   panel.querySelector('#layer-historical').addEventListener('change',e=>historicalLayers.forEach(l=>e.target.checked?map.addLayer(l):map.removeLayer(l)));
   panel.querySelector('#atlas-opacity').addEventListener('input',e=>{ const v=e.target.value/100; historicalLayers.forEach(l=>l.setOpacity(v)); panel.querySelector('#opacity-value').textContent=`${e.target.value}%`; });
 
@@ -254,7 +276,7 @@
     map.setView(marker.layer.getLatLng(),15); marker.layer.openPopup();
     dataPanel.classList.remove('is-open'); dataPanel.setAttribute('aria-hidden','true');
   });
-  panel.querySelector('#atlas-data-open').addEventListener('click',()=>{
+  dataButton.addEventListener('click',()=>{
     dataPanel.classList.add('is-open'); dataPanel.setAttribute('aria-hidden','false');
     setTimeout(()=>dataSearch.focus(),260);
   });
