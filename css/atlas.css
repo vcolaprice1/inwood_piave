@@ -77,7 +77,7 @@ body { font-family: Georgia, "Times New Roman", serif; color: var(--ink); }
 
 .river-label {
   border: 0 !important; box-shadow: none !important; background: transparent !important;
-  color: #17658f !important; font: italic 600 12px/1 Georgia, serif !important;
+  color: #17658f !important; font: italic 600 10px/1 Georgia, serif !important;
   text-shadow: -1px -1px 0 #eef6f5, 1px -1px 0 #eef6f5, -1px 1px 0 #eef6f5, 1px 1px 0 #eef6f5;
   pointer-events: none;
 }
@@ -117,6 +117,7 @@ body { font-family: Georgia, "Times New Roman", serif; color: var(--ink); }
 .comune-label { background:rgba(246,241,229,.72) !important; color:#58665f !important; font-size:9px !important; padding:1px 3px !important; }
 .comune-label.austro { background:rgba(255,235,229,.9) !important; color:#8d2f2f !important; font-weight:700 !important; }
 .hide-commune-labels .comune-label { display:none !important; }
+.hide-secondary-labels .localita-secondary { display:none !important; }
 .historical-boundary-label { background:#fffaf0 !important; color:#71351f !important; font-weight:700 !important; }
 .lake-label { background:rgba(235,248,255,.92) !important; color:#176b9b !important; font-weight:700 !important; }
 #atlas-overview {

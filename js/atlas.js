@@ -52,13 +52,17 @@
     style:{color:'#176b9b',weight:1.2,fillColor:'#55a9d6',fillOpacity:.72},
     onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.nome || 'Lago'),{sticky:true,className:'lake-label'})
   }).addTo(map);
+  const primaryLocalities = new Set(['Belluno','Feltre','Agordo','Longarone','Pieve di Cadore','Auronzo',"Cortina d'Ampezzo"]);
   const layerLocalita = L.geoJSON(json_Localita_rilevanti, {
     pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:4.2,color:'#fffaf0',weight:1.3,fillColor:'#5a2f24',fillOpacity:.96}),
-    onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.Nome),{permanent:true,direction:'top',offset:[0,-5],className:'localita-label'})
+    onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.Nome),{permanent:true,direction:'top',offset:[0,-5],className:`localita-label ${primaryLocalities.has(f.properties.Nome)?'localita-primary':'localita-secondary'}`})
   }).addTo(map);
-  const updateCommuneLabels = () => map.getContainer().classList.toggle('hide-commune-labels', map.getZoom() < 11);
-  map.on('zoomend', updateCommuneLabels);
-  updateCommuneLabels();
+  const updateScaleLabels = () => {
+    map.getContainer().classList.toggle('hide-commune-labels', map.getZoom() < 11);
+    map.getContainer().classList.toggle('hide-secondary-labels', map.getZoom() < 11);
+  };
+  map.on('zoomend', updateScaleLabels);
+  updateScaleLabels();
 
   function pointInRing(point, ring) {
     let inside = false;
@@ -119,8 +123,17 @@
   outsideBasin.forEach(layer => layer_Opifici_completo_19.removeLayer(layer));
 
   layer_fiumi_Bacino_Piave_23.setStyle({color:'#2d83b7', weight:1.8, opacity:.82});
-  const majorRivers = /PIAVE|BOITE|CORDEVOLE|ANSIEI|MAÈ|BIOIS|FIOR[EA]NTINA|PADOLA|PETTORINA|MIS|CAORAME|SONNA|CISMON|TEGOSA|LIVINALLONGO/;
-  const labelledRivers = new Set();
+  const majorRiverNames = new Map([
+    ['FIUME PIAVE','Fiume Piave'], ['FIUME PIAVE VECCHIA','Fiume Piave Vecchia'],
+    ['TORRENTE BOITE','Torrente Boite'], ['TORRENTE CORDEVOLE','Torrente Cordevole'],
+    ['TORRENTE ANSIEI','Torrente Ansiei'], ['TORRENTE MA�','Torrente Maè'],
+    ['TORRENTE BIOIS','Torrente Biois'], ['TORRENTE PADOLA','Torrente Padola'],
+    ['TORRENTE MIS','Torrente Mis'], ['TORRENTE CAORAME','Torrente Caorame'],
+    ['TORRENTE SONNA','Torrente Sonna'], ['TORRENTE FIORENTINA','Torrente Fiorentina'],
+    ['TORRENTE OMBRETTA - PETTORINA','Torrente Pettorina'], ['TORRENTE ARDO','Torrente Ardo'],
+    ['TORRENTE VAJONT','Torrente Vajont']
+  ]);
+  const riverLabelCandidates = new Map();
   layer_fiumi_Bacino_Piave_23.eachLayer(layer => {
     const name = layer.feature.properties.NOME_CI || layer.feature.properties.name || layer.feature.properties.Name;
     layer.unbindPopup();
@@ -128,12 +141,15 @@
     layer.options.className = `${layer.options.className || ''} atlas-river`.trim();
     if (layer.getElement()) layer.getElement().classList.add('atlas-river');
     layer.unbindTooltip();
-    const key = String(name || '').trim().toLocaleLowerCase('it');
-    if (key && majorRivers.test(String(name).toUpperCase()) && !labelledRivers.has(key)) {
-      labelledRivers.add(key);
-      layer.bindTooltip(esc(name), {permanent:true, direction:'center', className:'river-label', opacity:.88});
+    const sourceName = String(name || '').trim().toUpperCase();
+    const displayName = majorRiverNames.get(sourceName);
+    if (displayName) {
+      const score = JSON.stringify(layer.feature.geometry.coordinates).length;
+      const current = riverLabelCandidates.get(sourceName);
+      if (!current || score > current.score) riverLabelCandidates.set(sourceName,{layer,displayName,score});
     }
   });
+  riverLabelCandidates.forEach(({layer,displayName})=>layer.bindTooltip(esc(displayName), {permanent:true, direction:'center', className:'river-label', opacity:.88}));
   layer_Bacino_Piave_full_26.setStyle({color:'#53685c', weight:3, opacity:.92, fillColor:'#d7e4dc', fillOpacity:.08});
   layer_Bacino_Piave_full_26.eachLayer(layer => {
     layer.options.interactive = false;
@@ -158,8 +174,10 @@
       if (layer.getElement()) layer.getElement().classList.add('atlas-context');
     });
   });
-  map.removeLayer(layer_EU_1900_rect_2);
-  map.removeLayer(layer_Austro_Hungarian_Empire_Lands_3);
+  layer_EU_1900_rect_2.setStyle({color:'#57524a',weight:.8,fillColor:'#eee9dd',fillOpacity:.10,opacity:.75});
+  layer_Austro_Hungarian_Empire_Lands_3.setStyle({color:'#6d4e3d',weight:1.2,fillColor:'#c9b8a0',fillOpacity:.16,opacity:.9});
+  layer_EU_1900_rect_2.bringToBack();
+  layer_Austro_Hungarian_Empire_Lands_3.bringToBack();
   layer_Bacino_Piave_full_26.bringToBack();
   [layer_Padola_Ajarnola_20, layer_Pettorina_21, layer_Fiorentina_22, layer_Biois_24]
     .forEach(layer => map.removeLayer(layer));
@@ -180,6 +198,7 @@
     `<label class="atlas-layer"><input id="layer-districts-1881" type="checkbox"><span class="atlas-line historical-district"></span>Circondari attigui (1881)</label>`+
     `<label class="atlas-layer"><input id="layer-municipalities-1881" type="checkbox"><span class="atlas-swatch" style="background:#dce7df"></span>Comuni bellunesi (1881)</label>`+
     `<div class="atlas-austro-key"><span class="atlas-swatch" style="background:#c65c52"></span>Territori austro-ungarici</div>`+
+    `<label class="atlas-layer"><input id="layer-context" type="checkbox" checked><span class="atlas-swatch" style="background:#8b7d61"></span>Confini europei storici (1900)</label>`+
     `<label class="atlas-layer"><input id="layer-historical" type="checkbox"><span class="atlas-swatch" style="background:#d0b47d"></span>Carte originali georiferite</label>`+
     `<label class="atlas-layer" for="atlas-opacity">Opacità carte <small id="opacity-value">62%</small></label><input class="atlas-opacity" id="atlas-opacity" type="range" min="20" max="100" value="62">`;
   document.body.appendChild(panel);
@@ -206,6 +225,7 @@
   toggle('#layer-provinces-1881',layerProvince1881);
   toggle('#layer-districts-1881',layerCircondari1881);
   toggle('#layer-municipalities-1881',layerComuni1881);
+  panel.querySelector('#layer-context').addEventListener('change',e=>[layer_EU_1900_rect_2,layer_Austro_Hungarian_Empire_Lands_3].forEach(l=>e.target.checked?map.addLayer(l):map.removeLayer(l)));
   panel.querySelector('#layer-historical').addEventListener('change',e=>historicalLayers.forEach(l=>e.target.checked?map.addLayer(l):map.removeLayer(l)));
   panel.querySelector('#atlas-opacity').addEventListener('input',e=>{ const v=e.target.value/100; historicalLayers.forEach(l=>l.setOpacity(v)); panel.querySelector('#opacity-value').textContent=`${e.target.value}%`; });
 
