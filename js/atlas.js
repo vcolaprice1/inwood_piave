@@ -19,6 +19,13 @@
   ];
 
   const esc = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const normalizeGeoName = value => {
+    const connectors = new Set(['di','del','dello','della','dei','degli','delle','de','da','dal','dallo','dalla','e','o']);
+    return String(value || '').toLocaleLowerCase('it').split(/\s+/).map((word,index) => {
+      if (index > 0 && connectors.has(word)) return word;
+      return word.split('-').map(part => part ? part.charAt(0).toLocaleUpperCase('it') + part.slice(1) : part).join('-');
+    }).join(' ');
+  };
   const has = v => v !== null && v !== undefined && v !== '';
   const fmt = (v, suffix='') => has(v) ? `${Number.isFinite(Number(v)) ? Number(v).toLocaleString('it-IT', {maximumFractionDigits: 2}) : esc(v)}${suffix}` : '';
   const category = use => {
@@ -35,14 +42,17 @@
   };
 
   const layerProvince1881 = L.geoJSON(json_Province_Veneto_1881, {
+    interactive:false,
     style:{color:'#8b4a36',weight:2,fillOpacity:0,dashArray:'8 5'},
     onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.DEN_PROV),{sticky:true,className:'historical-boundary-label'})
   });
   const layerCircondari1881 = L.geoJSON(json_Circondari_Bacino_1881, {
+    interactive:false,
     style:{color:'#b2763b',weight:1.5,fillOpacity:0,dashArray:'5 4'},
     onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.DEN_CIRC),{sticky:true,className:'historical-boundary-label'})
   });
   const layerComuni1881 = L.geoJSON(json_Comuni_Belluno_1881, {
+    interactive:false,
     style:f=>f.properties.AUSTRO_UNGARICO
       ? {color:'#8d2f2f',weight:1.5,fillColor:'#c65c52',fillOpacity:.24,dashArray:'4 3'}
       : {color:'#65776d',weight:.8,fillColor:'#dce7df',fillOpacity:.08},
@@ -50,7 +60,7 @@
   });
   const layerLaghi = L.geoJSON(json_Laghi_Piave, {
     style:{color:'#176b9b',weight:1.2,fillColor:'#55a9d6',fillOpacity:.72},
-    onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.nome || 'Lago'),{sticky:true,className:'lake-label'})
+    onEachFeature:(f,l)=>l.bindTooltip(esc(normalizeGeoName(f.properties.nome || 'Lago')),{sticky:true,className:'lake-label'})
   }).addTo(map);
   const primaryLocalities = new Set(['Belluno','Feltre','Agordo','Longarone','Pieve di Cadore','Auronzo',"Cortina d'Ampezzo"]);
   const layerLocalita = L.geoJSON(json_Localita_rilevanti, {
@@ -174,8 +184,8 @@
       if (layer.getElement()) layer.getElement().classList.add('atlas-context');
     });
   });
-  layer_EU_1900_rect_2.setStyle({color:'#57524a',weight:.8,fillColor:'#eee9dd',fillOpacity:.10,opacity:.75});
-  layer_Austro_Hungarian_Empire_Lands_3.setStyle({color:'#6d4e3d',weight:1.2,fillColor:'#c9b8a0',fillOpacity:.16,opacity:.9});
+  layer_EU_1900_rect_2.setStyle({color:'#57524a',weight:.8,fillColor:'#eee9dd',fillOpacity:1,opacity:1});
+  layer_Austro_Hungarian_Empire_Lands_3.setStyle({color:'#6d4e3d',weight:1.2,fillColor:'#c9b8a0',fillOpacity:1,opacity:1});
   layer_EU_1900_rect_2.bringToBack();
   layer_Austro_Hungarian_Empire_Lands_3.bringToBack();
   layer_Bacino_Piave_full_26.bringToBack();
@@ -217,14 +227,33 @@
     markers.forEach(m => active.has(m.category) ? m.layer.setStyle({fillOpacity:.92,opacity:1}) : m.layer.setStyle({fillOpacity:0,opacity:0}));
   });
 
-  const toggle=(id,layer)=>panel.querySelector(id).addEventListener('change',e=>e.target.checked?map.addLayer(layer):map.removeLayer(layer));
+  const bringPointsToFront=()=>{
+    if(map.hasLayer(layer_Opifici_completo_19)) layer_Opifici_completo_19.bringToFront();
+    if(map.hasLayer(layerLocalita)) layerLocalita.bringToFront();
+  };
+  const toggle=(id,layer)=>panel.querySelector(id).addEventListener('change',e=>{
+    e.target.checked ? map.addLayer(layer) : map.removeLayer(layer);
+    bringPointsToFront();
+  });
   toggle('#layer-rivers',layer_fiumi_Bacino_Piave_23);
   toggle('#layer-lakes',layerLaghi);
   toggle('#layer-localities',layerLocalita);
   toggle('#layer-basin',layer_Bacino_Piave_full_26);
   toggle('#layer-provinces-1881',layerProvince1881);
   toggle('#layer-districts-1881',layerCircondari1881);
-  toggle('#layer-municipalities-1881',layerComuni1881);
+  panel.querySelector('#layer-municipalities-1881').addEventListener('change',e=>{
+    const localitiesToggle=panel.querySelector('#layer-localities');
+    if(e.target.checked){
+      map.addLayer(layerComuni1881);
+      localitiesToggle.checked=false;
+      map.removeLayer(layerLocalita);
+    }else{
+      map.removeLayer(layerComuni1881);
+      localitiesToggle.checked=true;
+      map.addLayer(layerLocalita);
+    }
+    bringPointsToFront();
+  });
   panel.querySelector('#layer-context').addEventListener('change',e=>[layer_EU_1900_rect_2,layer_Austro_Hungarian_Empire_Lands_3].forEach(l=>e.target.checked?map.addLayer(l):map.removeLayer(l)));
   panel.querySelector('#layer-historical').addEventListener('change',e=>historicalLayers.forEach(l=>e.target.checked?map.addLayer(l):map.removeLayer(l)));
   panel.querySelector('#atlas-opacity').addEventListener('input',e=>{ const v=e.target.value/100; historicalLayers.forEach(l=>l.setOpacity(v)); panel.querySelector('#opacity-value').textContent=`${e.target.value}%`; });
