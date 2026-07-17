@@ -47,12 +47,12 @@
 
   const layerProvince1881 = L.geoJSON(json_Province_Veneto_1881, {
     interactive:true,
-    style:{color:'#8b4a36',weight:2,fill:false,dashArray:'8 5',className:'province-boundary-1881'},
+    style:{color:'#8b4a36',weight:2,fill:true,fillColor:'#8b4a36',fillOpacity:.001,dashArray:'8 5',className:'province-boundary-1881'},
     onEachFeature:(f,l)=>l.bindPopup(`<strong>${esc(administrativeName('Provincia',f.properties.DEN_PROV))}</strong>`,{className:'historical-boundary-popup',maxWidth:220})
   });
   const layerCircondari1881 = L.geoJSON(json_Circondari_Bacino_1881, {
     interactive:true,
-    style:{color:'#b2763b',weight:1.5,fill:false,dashArray:'5 4',className:'district-boundary-1881'},
+    style:{color:'#b2763b',weight:1.5,fill:true,fillColor:'#b2763b',fillOpacity:.001,dashArray:'5 4',className:'district-boundary-1881'},
     onEachFeature:(f,l)=>l.bindPopup(`<strong>${esc(administrativeName('Circondario',f.properties.DEN_CIRC))}</strong>`,{className:'historical-boundary-popup',maxWidth:220})
   });
   const layerComuni1881 = L.geoJSON(json_Comuni_Belluno_1881, {
