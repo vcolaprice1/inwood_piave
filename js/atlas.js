@@ -26,6 +26,10 @@
       return word.split('-').map(part => part ? part.charAt(0).toLocaleUpperCase('it') + part.slice(1) : part).join('-');
     }).join(' ');
   };
+  const administrativeName = (prefix,value) => {
+    const name=String(value || '').trim().replace(new RegExp(`^${prefix}\\s+(?:di\\s+)?`,'i'),'');
+    return `${prefix} di ${normalizeGeoName(name)}`;
+  };
   const has = v => v !== null && v !== undefined && v !== '';
   const fmt = (v, suffix='') => has(v) ? `${Number.isFinite(Number(v)) ? Number(v).toLocaleString('it-IT', {maximumFractionDigits: 2}) : esc(v)}${suffix}` : '';
   const category = use => {
@@ -44,12 +48,12 @@
   const layerProvince1881 = L.geoJSON(json_Province_Veneto_1881, {
     interactive:true,
     style:{color:'#8b4a36',weight:2,fill:false,dashArray:'8 5',className:'province-boundary-1881'},
-    onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.DEN_PROV),{sticky:true,className:'historical-boundary-label'})
+    onEachFeature:(f,l)=>l.bindPopup(`<strong>${esc(administrativeName('Provincia',f.properties.DEN_PROV))}</strong>`,{className:'historical-boundary-popup',maxWidth:220})
   });
   const layerCircondari1881 = L.geoJSON(json_Circondari_Bacino_1881, {
     interactive:true,
     style:{color:'#b2763b',weight:1.5,fill:false,dashArray:'5 4',className:'district-boundary-1881'},
-    onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.DEN_CIRC),{sticky:true,className:'historical-boundary-label'})
+    onEachFeature:(f,l)=>l.bindPopup(`<strong>${esc(administrativeName('Circondario',f.properties.DEN_CIRC))}</strong>`,{className:'historical-boundary-popup',maxWidth:220})
   });
   const layerComuni1881 = L.geoJSON(json_Comuni_Belluno_1881, {
     interactive:false,
@@ -134,7 +138,6 @@
       autoPanPaddingTopLeft:[370,90],
       autoPanPaddingBottomRight:[70,90]
     });
-    layer.bindTooltip(esc(p.Denom || ''), {direction:'top', opacity:.9, sticky:true});
     if (!insideBasin(coordinates)) {
       outsideBasin.push(layer);
       return;
