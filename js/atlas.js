@@ -300,10 +300,10 @@
 
   const dataFields = [
     ['Denom','Denominazione'], ['Uso','Uso'], ['NOrd','N. ordine'], ['Canale','Canale'],
-    ['CanLung','Lunghezza canale'], ['Disliv','Dislivello'], ['CorsoAcq','Corso d’acqua'],
-    ['CorLung','Lunghezza corso'], ['Derivaz','Derivazione'], ['Caduta','Caduta'],
-    ['PortMax','Portata max'], ['PortMin','Portata min'], ['PortOrd','Portata ordinaria'],
-    ['DurMax','Durata max'], ['DurMin','Durata min'], ['DurOrd','Durata ordinaria'],
+    ['CanLung','Lunghezza canale (m)'], ['Disliv','Dislivello (m)'], ['CorsoAcq','Corso d’acqua'],
+    ['CorLung','Lunghezza corso (km)'], ['Derivaz','Derivazione'], ['Caduta','Caduta (m)'],
+    ['PortMax','Portata max (l/s)'], ['PortMin','Portata min (l/s)'], ['PortOrd','Portata ordinaria (l/s)'],
+    ['DurMax','Durata max (mesi)'], ['DurMin','Durata min (mesi)'], ['DurOrd','Durata ordinaria (mesi)'],
     ['NumOpif','N. opifici'], ['Osserv','Osservazioni'], ['PdfPage','Pagina fonte']
   ];
   const dataPanel = document.createElement('section');
