@@ -42,13 +42,13 @@
   };
 
   const layerProvince1881 = L.geoJSON(json_Province_Veneto_1881, {
-    interactive:false,
-    style:{color:'#8b4a36',weight:2,fillOpacity:0,dashArray:'8 5'},
+    interactive:true,
+    style:{color:'#8b4a36',weight:2,fill:false,dashArray:'8 5',className:'province-boundary-1881'},
     onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.DEN_PROV),{sticky:true,className:'historical-boundary-label'})
   });
   const layerCircondari1881 = L.geoJSON(json_Circondari_Bacino_1881, {
-    interactive:false,
-    style:{color:'#b2763b',weight:1.5,fillOpacity:0,dashArray:'5 4'},
+    interactive:true,
+    style:{color:'#b2763b',weight:1.5,fill:false,dashArray:'5 4',className:'district-boundary-1881'},
     onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.DEN_CIRC),{sticky:true,className:'historical-boundary-label'})
   });
   const layerComuni1881 = L.geoJSON(json_Comuni_Belluno_1881, {
@@ -56,7 +56,11 @@
     style:f=>f.properties.AUSTRO_UNGARICO
       ? {color:'#8d2f2f',weight:1.5,fillColor:'#c65c52',fillOpacity:.24,dashArray:'4 3'}
       : {color:'#65776d',weight:.8,fillColor:'#dce7df',fillOpacity:.08},
-    onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.ETICHETTA_1891),{permanent:true,direction:'center',className:f.properties.AUSTRO_UNGARICO?'comune-label austro':'comune-label'})
+    onEachFeature:(f,l)=>{
+      const label=esc(f.properties.ETICHETTA_1891);
+      l.bindTooltip(label,{permanent:true,direction:'center',className:f.properties.AUSTRO_UNGARICO?'comune-label austro':'comune-label'});
+      l.once('add',()=>l.openTooltip(typeof l.getCenter==='function' ? l.getCenter() : l.getBounds().getCenter()));
+    }
   });
   const layerLaghi = L.geoJSON(json_Laghi_Piave, {
     style:{color:'#176b9b',weight:1.2,fillColor:'#55a9d6',fillOpacity:.72},
@@ -122,7 +126,14 @@
     const p = layer.feature.properties; const c = category(p.Uso); const record = {layer, category:c, p};
     allRecords.push(record);
     layer.setStyle({radius: 5.3, color: '#fffdf6', weight: 1.2, fillColor: colors[c], fillOpacity: .92});
-    layer.unbindPopup(); layer.bindPopup(popup(p), {maxWidth: 360, className: 'atlas-popup'});
+    layer.unbindPopup(); layer.bindPopup(popup(p), {
+      maxWidth:360,
+      className:'atlas-popup',
+      autoPan:true,
+      keepInView:true,
+      autoPanPaddingTopLeft:[370,90],
+      autoPanPaddingBottomRight:[70,90]
+    });
     layer.bindTooltip(esc(p.Denom || ''), {direction:'top', opacity:.9, sticky:true});
     if (!insideBasin(coordinates)) {
       outsideBasin.push(layer);
@@ -131,6 +142,7 @@
     counts[c]++; markers.push(record);
   });
   outsideBasin.forEach(layer => layer_Opifici_completo_19.removeLayer(layer));
+  map.getPane('pane_Opifici_completo_19').style.zIndex=650;
 
   layer_fiumi_Bacino_Piave_23.setStyle({color:'#2d83b7', weight:1.8, opacity:.82});
   const majorRiverNames = new Map([
@@ -336,9 +348,9 @@
   const basinBounds = layer_Bacino_Piave_full_26.getBounds();
   map.fitBounds(basinBounds, {paddingTopLeft:[350,20], paddingBottomRight:[20,20], animate:false});
   const startingZoom = map.getZoom();
-  map.setMinZoom(startingZoom);
-  map.setMaxBounds(basinBounds.pad(.16));
-  map.options.maxBoundsViscosity = 1;
+  map.setMinZoom(Math.max(1,startingZoom-1));
+  map.setMaxBounds(basinBounds.pad(.65));
+  map.options.maxBoundsViscosity=.55;
 
   const overview = document.createElement('div');
   overview.id = 'atlas-overview';
