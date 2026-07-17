@@ -82,6 +82,8 @@ body { font-family: Georgia, "Times New Roman", serif; color: var(--ink); }
   pointer-events: none;
 }
 .river-label::before { display: none; }
+.hide-all-river-labels .river-label,
+.hide-secondary-river-labels .river-label-secondary { display:none !important; }
 
 .atlas-popup .leaflet-popup-content-wrapper { border-radius: 5px; background: #fffdf8; color: var(--ink); box-shadow: 0 10px 35px rgba(30,35,32,.24); }
 .atlas-popup .leaflet-popup-content { width: 320px !important; margin: 0; }

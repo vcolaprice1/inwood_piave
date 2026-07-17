@@ -76,8 +76,11 @@
     onEachFeature:(f,l)=>l.bindTooltip(esc(f.properties.Nome),{permanent:true,direction:'top',offset:[0,-5],className:`localita-label ${primaryLocalities.has(f.properties.Nome)?'localita-primary':'localita-secondary'}`})
   }).addTo(map);
   const updateScaleLabels = () => {
-    map.getContainer().classList.toggle('hide-commune-labels', map.getZoom() < 11);
-    map.getContainer().classList.toggle('hide-secondary-labels', map.getZoom() < 11);
+    const zoom=map.getZoom();
+    map.getContainer().classList.toggle('hide-commune-labels',zoom<11);
+    map.getContainer().classList.toggle('hide-secondary-labels',zoom<11);
+    map.getContainer().classList.toggle('hide-all-river-labels',zoom<10);
+    map.getContainer().classList.toggle('hide-secondary-river-labels',zoom<12);
   };
   map.on('zoomend', updateScaleLabels);
   updateScaleLabels();
@@ -174,7 +177,13 @@
       if (!current || score > current.score) riverLabelCandidates.set(sourceName,{layer,displayName,score});
     }
   });
-  riverLabelCandidates.forEach(({layer,displayName})=>layer.bindTooltip(esc(displayName), {permanent:true, direction:'center', className:'river-label', opacity:.88}));
+  const primaryRiverLabels=new Set(['Fiume Piave','Fiume Piave Vecchia','Torrente Cordevole','Torrente Boite']);
+  riverLabelCandidates.forEach(({layer,displayName})=>layer.bindTooltip(esc(displayName), {
+    permanent:true,
+    direction:'center',
+    className:`river-label ${primaryRiverLabels.has(displayName)?'river-label-primary':'river-label-secondary'}`,
+    opacity:.88
+  }));
   layer_Bacino_Piave_full_26.setStyle({color:'#53685c', weight:3, opacity:.92, fillColor:'#d7e4dc', fillOpacity:.08});
   layer_Bacino_Piave_full_26.eachLayer(layer => {
     layer.options.interactive = false;
