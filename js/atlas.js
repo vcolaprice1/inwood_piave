@@ -150,7 +150,14 @@
   outsideBasin.forEach(layer => layer_Opifici_completo_19.removeLayer(layer));
   map.getPane('pane_Opifici_completo_19').style.zIndex=650;
 
-  layer_fiumi_Bacino_Piave_23.setStyle({color:'#2d83b7', weight:1.8, opacity:.82});
+  const hydronymKey=value=>String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim()
+    .replace(/^(FIUME|TORRENTE|RIO|CANALE)\s+/,'').replace(/\s*\(.*$/,'').trim();
+  const principalTributaries=new Set(['ANSIEI','BOITE','MAE','CORDEVOLE','CAORAME','SONNA','PADOLA','VAJONT','ARDO','SOLIGO']);
+  const riverHierarchyStyle=key=>{
+    if(key==='PIAVE' || key==='PIAVE VECCHIA') return {color:'#176b9b',weight:4,opacity:.96};
+    if(principalTributaries.has(key)) return {color:'#2d83b7',weight:2.5,opacity:.86};
+    return {color:'#69acd0',weight:1.05,opacity:.58};
+  };
   const majorRiverNames = new Map([
     ['FIUME PIAVE','Fiume Piave'], ['FIUME PIAVE VECCHIA','Fiume Piave Vecchia'],
     ['TORRENTE BOITE','Torrente Boite'], ['TORRENTE CORDEVOLE','Torrente Cordevole'],
@@ -164,6 +171,10 @@
   const riverLabelCandidates = new Map();
   layer_fiumi_Bacino_Piave_23.eachLayer(layer => {
     const name = layer.feature.properties.NOME_CI || layer.feature.properties.name || layer.feature.properties.Name;
+    const hierarchyKey=hydronymKey(name);
+    const hierarchyLevel=(hierarchyKey==='PIAVE'||hierarchyKey==='PIAVE VECCHIA') ? 1 : (principalTributaries.has(hierarchyKey) ? 2 : 3);
+    layer.feature.properties.GERARCHIA_IDROGRAFICA=hierarchyLevel;
+    layer.setStyle(riverHierarchyStyle(hierarchyKey));
     layer.unbindPopup();
     layer.options.interactive = false;
     layer.options.className = `${layer.options.className || ''} atlas-river`.trim();
